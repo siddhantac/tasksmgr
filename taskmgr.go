@@ -71,6 +71,9 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 func main() {
+	notion()
+	return
+
 	ctx := context.Background()
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
