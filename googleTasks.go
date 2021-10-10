@@ -85,13 +85,13 @@ func NewTasksClient() (*TasksClient, error) {
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, tasks.TasksReadonlyScope)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse client secret file to config: %w", err)
+		return nil, fmt.Errorf("unable to parse client secret file to config: %w", err)
 	}
 	client := getClient(config)
 
 	srv, err := tasks.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, fmt.Errorf("Unable to retrieve tasks Client %w", err)
+		return nil, fmt.Errorf("unable to retrieve tasks Client %w", err)
 	}
 
 	return &TasksClient{svc: srv}, nil
@@ -101,7 +101,7 @@ func NewTasksClient() (*TasksClient, error) {
 func (c *TasksClient) ListTasks(limit int64) ([]*Task, error) {
 	r, err := c.svc.Tasklists.List().MaxResults(10).Do()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to retrieve task lists. %w", err)
+		return nil, fmt.Errorf("unable to retrieve task lists. %w", err)
 	}
 
 	if len(r.Items) <= 0 {
