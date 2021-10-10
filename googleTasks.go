@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -70,53 +71,84 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func main() {
-	printTodos()
-	return
+type TasksClient struct {
+	svc *tasks.Service
+}
 
+func NewTasksClient() (*TasksClient, error) {
 	ctx := context.Background()
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
+		return nil, fmt.Errorf("unable to read client secret file: %w", err)
 	}
 
 	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, tasks.TasksReadonlyScope)
 	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
+		return nil, fmt.Errorf("Unable to parse client secret file to config: %w", err)
 	}
 	client := getClient(config)
 
 	srv, err := tasks.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve tasks Client %v", err)
+		return nil, fmt.Errorf("Unable to retrieve tasks Client %w", err)
 	}
 
-	r, err := srv.Tasklists.List().MaxResults(10).Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve task lists. %v", err)
-	}
-
-	fmt.Println("Task Lists:")
-	if len(r.Items) > 0 {
-		for _, i := range r.Items {
-			fmt.Printf("%s (%s)\n", i.Title, i.Id)
-			getTasks(srv, i.Id)
-		}
-	} else {
-		fmt.Print("No task lists found.")
-	}
+	return &TasksClient{svc: srv}, nil
 
 }
 
-func getTasks(srv *tasks.Service, id string) {
-	tasks, err := srv.Tasks.List(id).MaxResults(10).Do()
+func (c *TasksClient) ListTasks(limit int64) ([]*Task, error) {
+	r, err := c.svc.Tasklists.List().MaxResults(10).Do()
 	if err != nil {
-		fmt.Println(err)
-		return
+		return nil, fmt.Errorf("Unable to retrieve task lists. %w", err)
 	}
 
-	for _, t := range tasks.Items {
+	if len(r.Items) <= 0 {
+		return nil, fmt.Errorf("no list found")
+	}
+
+	var id string
+	for _, i := range r.Items {
+		if i.Title == "Home" {
+			id = i.Id
+			break
+		}
+	}
+
+	googleTasks, err := c.svc.Tasks.List(id).MaxResults(limit).Do()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list tasks: %w", err)
+	}
+
+	taskList := make([]*Task, 0, len(googleTasks.Items))
+	for _, item := range googleTasks.Items {
+		taskList = append(taskList, NewTask(item))
+	}
+
+	return taskList, nil
+}
+
+type Task struct {
+	ID        string
+	Title     string
+	Due       time.Time
+	Deleted   bool
+	Completed bool
+}
+
+func NewTask(googleTask *tasks.Task) *Task {
+	completed := googleTask.Completed != nil
+	return &Task{
+		ID:        googleTask.Id,
+		Title:     googleTask.Title,
+		Deleted:   googleTask.Deleted,
+		Completed: completed,
+	}
+}
+
+func PrintTasks(taskList []*Task) {
+	for _, t := range taskList {
 		fmt.Printf("\t* %s %q %t\n", t.Title, t.Due, t.Deleted)
 	}
 }
