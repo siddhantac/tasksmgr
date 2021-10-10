@@ -9,7 +9,7 @@ import (
 	"github.com/sidc9/gotion"
 )
 
-func notion() {
+func printTodos() {
 	b, err := ioutil.ReadFile(".env")
 	if err != nil {
 		log.Fatal(err)
@@ -19,13 +19,6 @@ func notion() {
 
 	gotion.Init(apiKey, gotion.DefaultURL)
 	c := gotion.GetClient()
-
-	// pg, err := c.GetPage("a0e3feca-85c9-440f-91cc-8c367d6aa9f4")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// fmt.Println(pg.Title())
 
 	db, err := c.GetDatabase("539a391b9f83427f933518f5dc2b6c83")
 	if err != nil {

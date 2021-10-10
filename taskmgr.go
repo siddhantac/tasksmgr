@@ -71,7 +71,7 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 func main() {
-	notion()
+	printTodos()
 	return
 
 	ctx := context.Background()
