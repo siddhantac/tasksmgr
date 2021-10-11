@@ -3,40 +3,57 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
-	"strings"
 
 	"github.com/sidc9/gotion"
 )
 
-func printTodos() {
-	b, err := ioutil.ReadFile(".env")
+const databaseID = "539a391b9f83427f933518f5dc2b6c83"
+
+type NotionClient struct {
+	client *gotion.Client
+}
+
+func NewNotionClient() (*NotionClient, error) {
+	apiKey, err := ioutil.ReadFile(".env")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	apiKey := strings.TrimSuffix(string(b), "\n")
-
-	gotion.Init(apiKey, gotion.DefaultURL)
+	gotion.Init(string(apiKey), gotion.DefaultURL)
 	c := gotion.GetClient()
+	return &NotionClient{client: c}, nil
+}
 
-	db, err := c.GetDatabase("539a391b9f83427f933518f5dc2b6c83")
+func (c *NotionClient) ListTasks(limit int) ([]*Task, error) {
+	db, err := c.client.GetDatabase(databaseID)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to get database: %w", err)
 	}
 
-	fmt.Println(db.Title[0].PlainText)
 	pages, err := db.Query(nil)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to query database: %w", err)
 	}
 
-	for _, p := range pages.Results {
-		var done bool
-		d, ok := p.Properties["Done"]
-		if ok {
-			done = d.Checkbox
-		}
-		fmt.Printf(" - [%t] %s %s\n", done, p.Title(), p.ID)
+	taskList := make([]*Task, 0, len(pages.Results))
+	for _, page := range pages.Results {
+		taskList = append(taskList, NewTaskFromNotionTask(page))
+		// fmt.Printf(" - [%t] %s %s %s\n", done, p.Title(), p.Properties["Date"], p.ID)
+	}
+	return taskList, nil
+}
+
+// TODO: date
+func NewTaskFromNotionTask(page *gotion.Page) *Task {
+	var completed bool
+	if _, ok := page.Properties["Done"]; ok {
+		completed = page.Properties["Done"].Checkbox
+	}
+	return &Task{
+		ID:        page.ID,
+		Title:     page.Title(),
+		Completed: completed,
+		// TODO
+		// Due:       page.Properties["Date"],
 	}
 }
