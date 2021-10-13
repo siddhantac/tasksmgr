@@ -5,6 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go v0.97.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/matryer/is v1.4.0
 	github.com/sidc9/gotion v0.0.0-20211010063059-30d732a10597
 	golang.org/x/net v0.0.0-20211008194852-3b03d305991f // indirect
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1

@@ -37,23 +37,8 @@ func (c *NotionClient) ListTasks(limit int) ([]*Task, error) {
 
 	taskList := make([]*Task, 0, len(pages.Results))
 	for _, page := range pages.Results {
-		taskList = append(taskList, NewTaskFromNotionTask(page))
+		taskList = append(taskList, NewTaskFromNotionPage(page))
 		// fmt.Printf(" - [%t] %s %s %s\n", done, p.Title(), p.Properties["Date"], p.ID)
 	}
 	return taskList, nil
-}
-
-// TODO: date
-func NewTaskFromNotionTask(page *gotion.Page) *Task {
-	var completed bool
-	if _, ok := page.Properties["Done"]; ok {
-		completed = page.Properties["Done"].Checkbox
-	}
-	return &Task{
-		ID:        page.ID,
-		Title:     page.Title(),
-		Completed: completed,
-		// TODO
-		// Due:       page.Properties["Date"],
-	}
 }

@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -68,34 +67,10 @@ func (c *TasksClient) ListTasks(listName string, limit int64) ([]*Task, error) {
 
 	taskList := make([]*Task, 0, len(googleTasks.Items))
 	for _, item := range googleTasks.Items {
-		taskList = append(taskList, NewTask(item))
+		taskList = append(taskList, NewTaskFromGoogleTask(item))
 	}
 
 	return taskList, nil
-}
-
-type Task struct {
-	ID        string
-	Title     string
-	Due       time.Time
-	Deleted   bool
-	Completed bool
-}
-
-func NewTask(googleTask *tasks.Task) *Task {
-	completed := googleTask.Completed != nil
-	return &Task{
-		ID:        googleTask.Id,
-		Title:     googleTask.Title,
-		Deleted:   googleTask.Deleted,
-		Completed: completed,
-	}
-}
-
-func PrintTasks(taskList []*Task) {
-	for _, t := range taskList {
-		fmt.Printf("\t* %s %q %t\n", t.Title, t.Due, t.Deleted)
-	}
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
